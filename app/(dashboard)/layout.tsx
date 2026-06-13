@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Leaf, LayoutDashboard, Sparkles, FileText, ArrowLeft, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { UserButton } from "@clerk/nextjs";
 
 export default function DashboardLayout({
   children,
@@ -67,13 +68,12 @@ export default function DashboardLayout({
           {/* User Info Area */}
           <div className="p-4 border-t border-zinc-900 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center text-emerald-400 font-bold border border-zinc-700">
-                GD
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-white truncate">Green Dev</span>
-                <span className="text-xs text-zinc-500 truncate">developer@planetprompt.io</span>
-              </div>
+              <UserButton showName appearance={{
+                elements: {
+                  userButtonOuterIdentifier: "text-zinc-200 text-sm font-medium",
+                  userButtonBox: "flex-row-reverse"
+                }
+              }} />
             </div>
             
             <Link href="/" className="text-zinc-500 hover:text-zinc-300 transition-colors p-1.5 rounded-lg hover:bg-zinc-900" title="Exit Dashboard">
@@ -146,13 +146,12 @@ export default function DashboardLayout({
               </div>
 
               <div className="pt-6 border-t border-zinc-800 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center text-emerald-400 font-bold border border-zinc-700">
-                  GD
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">Green Dev</p>
-                  <p className="text-xs text-zinc-550">developer@planetprompt.io</p>
-                </div>
+                <UserButton showName appearance={{
+                  elements: {
+                    userButtonOuterIdentifier: "text-zinc-200 text-sm font-medium",
+                    userButtonBox: "flex-row-reverse"
+                  }
+                }} />
               </div>
             </nav>
           </div>

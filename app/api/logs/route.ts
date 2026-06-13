@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getOrCreateDbUser } from "@/lib/auth-helpers";
 
 // Hardcoded conversion factors (1000 tokens)
 const CONVERSIONS = {
@@ -10,7 +11,14 @@ const CONVERSIONS = {
 
 export async function GET() {
   try {
-    const userId = "default-user";
+    const dbUser = await getOrCreateDbUser();
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const userId = dbUser.id;
     
     // Fetch all logs for the default user to calculate cumulative totals
     const allLogs = await db.queryLog.findMany({
@@ -114,7 +122,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const userId = "default-user";
+    const dbUser = await getOrCreateDbUser();
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const userId = dbUser.id;
 
     // Standard conversions
     const carbonGrams = Number(((tokenCount / 1000) * CONVERSIONS.carbonPer1k).toFixed(4));
