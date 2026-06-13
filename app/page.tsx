@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { Leaf, ShieldAlert, Cpu, Sparkles, BarChart3, MessageSquare, FileText, ArrowRight } from "lucide-react";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { userId } = await auth();
   return (
     <div className="min-h-screen bg-grid-pattern relative flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-300">
       
@@ -12,14 +14,14 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link href={userId ? "/dashboard" : "/"} className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <div className="h-9 w-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
               <Leaf className="h-5 w-5 text-emerald-400" />
             </div>
             <span className="font-semibold text-lg tracking-tight text-white">
               Planet<span className="text-emerald-400">Prompt</span>
             </span>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-sm text-zinc-400 font-medium">
             <Link href="/dashboard" className="hover:text-emerald-400 transition-colors">Dashboard</Link>
@@ -60,10 +62,10 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full justify-center">
             <Link 
-              href="/dashboard"
+              href={userId ? "/dashboard" : "/sign-up"}
               className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 font-bold rounded-lg transition-all hover:opacity-95 hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] text-center"
             >
-              Get Started Free
+              {userId ? "Go to Dashboard" : "Get Started Free"}
             </Link>
             <Link 
               href="/advisor"

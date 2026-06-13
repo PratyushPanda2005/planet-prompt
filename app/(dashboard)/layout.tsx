@@ -33,7 +33,7 @@ export default function DashboardLayout({
           
           {/* Logo Area */}
           <div className="flex items-center h-16 px-6 border-b border-zinc-900">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
               <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
                 <Leaf className="h-4.5 w-4.5 text-emerald-400" />
               </div>
@@ -70,7 +70,11 @@ export default function DashboardLayout({
             <div className="flex items-center gap-3">
               <UserButton showName appearance={{
                 elements: {
-                  userButtonOuterIdentifier: "text-zinc-200 text-sm font-medium",
+                  userButtonOuterIdentifier: {
+                    color: "#ffffff",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                  },
                   userButtonBox: "flex-row-reverse"
                 }
               }} />
@@ -88,7 +92,7 @@ export default function DashboardLayout({
       <div className="flex flex-col flex-1 md:pl-64 overflow-hidden h-full">
         
         <header className="flex items-center justify-between md:hidden h-16 px-6 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-45">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
               <Leaf className="h-4.5 w-4.5 text-emerald-400" />
             </div>
@@ -148,7 +152,11 @@ export default function DashboardLayout({
               <div className="pt-6 border-t border-zinc-800 flex items-center gap-3">
                 <UserButton showName appearance={{
                   elements: {
-                    userButtonOuterIdentifier: "text-zinc-200 text-sm font-medium",
+                    userButtonOuterIdentifier: {
+                      color: "#ffffff",
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    },
                     userButtonBox: "flex-row-reverse"
                   }
                 }} />
