@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getOrCreateDbUser } from "@/lib/auth-helpers";
 
 // Helper to get start and end dates of a month string (YYYY-MM)
 function getMonthRange(monthStr: string) {
@@ -35,7 +36,15 @@ function generateMockNarrative(stats: { carbonGrams: number; waterMl: number; la
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const userId = "default-user";
+    
+    const dbUser = await getOrCreateDbUser();
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const userId = dbUser.id;
     
     // Default to current month if not specified
     const now = new Date();
