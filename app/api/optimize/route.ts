@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-
+import { classifyPrompt } from "@/gatekeeper/gatekeeper";
 // Hardcoded conversion factors (1000 tokens)
 const CONVERSIONS = {
   carbonPer1k: 0.3,   // grams
@@ -187,15 +187,15 @@ User Prompt:
 
     const rates = modelConfig
       ? {
-          carbon: modelConfig.carbonPer1k,
-          water: modelConfig.waterPer1k,
-          land: modelConfig.landPer1k
-        }
+        carbon: modelConfig.carbonPer1k,
+        water: modelConfig.waterPer1k,
+        land: modelConfig.landPer1k
+      }
       : {
-          carbon: CONVERSIONS.carbonPer1k,
-          water: CONVERSIONS.waterPer1k,
-          land: CONVERSIONS.landPer1k
-        };
+        carbon: CONVERSIONS.carbonPer1k,
+        water: CONVERSIONS.waterPer1k,
+        land: CONVERSIONS.landPer1k
+      };
 
     // Footprints
     const originalFootprint = {
