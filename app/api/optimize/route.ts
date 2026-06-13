@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 // Hardcoded conversion factors (1000 tokens)
 const CONVERSIONS = {
@@ -179,17 +180,34 @@ User Prompt:
       Math.max(3, Math.ceil(originalTokenCount * 0.75))
     );
 
+    // Look up dynamic conversion factors based on modelUsed
+    const modelConfig = await db.modelConfig.findUnique({
+      where: { name: modelUsed }
+    });
+
+    const rates = modelConfig
+      ? {
+          carbon: modelConfig.carbonPer1k,
+          water: modelConfig.waterPer1k,
+          land: modelConfig.landPer1k
+        }
+      : {
+          carbon: CONVERSIONS.carbonPer1k,
+          water: CONVERSIONS.waterPer1k,
+          land: CONVERSIONS.landPer1k
+        };
+
     // Footprints
     const originalFootprint = {
-      carbonGrams: Number(((originalTokenCount / 1000) * CONVERSIONS.carbonPer1k).toFixed(4)),
-      waterMl: Number(((originalTokenCount / 1000) * CONVERSIONS.waterPer1k).toFixed(4)),
-      landCm2: Number(((originalTokenCount / 1000) * CONVERSIONS.landPer1k).toFixed(4)),
+      carbonGrams: Number(((originalTokenCount / 1000) * rates.carbon).toFixed(4)),
+      waterMl: Number(((originalTokenCount / 1000) * rates.water).toFixed(4)),
+      landCm2: Number(((originalTokenCount / 1000) * rates.land).toFixed(4)),
     };
 
     const optimizedFootprint = {
-      carbonGrams: Number(((finalOptimizedTokenCount / 1000) * CONVERSIONS.carbonPer1k).toFixed(4)),
-      waterMl: Number(((finalOptimizedTokenCount / 1000) * CONVERSIONS.waterPer1k).toFixed(4)),
-      landCm2: Number(((finalOptimizedTokenCount / 1000) * CONVERSIONS.landPer1k).toFixed(4)),
+      carbonGrams: Number(((finalOptimizedTokenCount / 1000) * rates.carbon).toFixed(4)),
+      waterMl: Number(((finalOptimizedTokenCount / 1000) * rates.water).toFixed(4)),
+      landCm2: Number(((finalOptimizedTokenCount / 1000) * rates.land).toFixed(4)),
     };
 
     const savingsPercent = Number(

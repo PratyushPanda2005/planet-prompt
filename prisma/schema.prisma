@@ -41,3 +41,13 @@ model Report {
   aiNarrative String
   createdAt   DateTime @default(now())
 }
+
+model ModelConfig {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  displayName   String
+  carbonPer1k   Float
+  waterPer1k    Float
+  landPer1k     Float
+  createdAt     DateTime @default(now())
+}

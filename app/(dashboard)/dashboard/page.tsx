@@ -57,6 +57,13 @@ export default function DashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [metricTab, setMetricTab] = useState<"carbon" | "water" | "land">("carbon");
 
+  interface ModelOption {
+    name: string;
+    displayName: string;
+  }
+
+  const [models, setModels] = useState<ModelOption[]>([]);
+
   // Mock Query Quick Log Form State
   const [mockPrompt, setMockPrompt] = useState("");
   const [mockModel, setMockModel] = useState("gpt-4o");
@@ -81,9 +88,28 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchModels = async () => {
+    try {
+      const res = await fetch("/api/models");
+      const data = await res.json();
+      if (data.success && data.models) {
+        setModels(data.models);
+        if (data.models.length > 0) {
+          const names = data.models.map((m: any) => m.name);
+          if (!names.includes(mockModel)) {
+            setMockModel(data.models[0].name);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching models:", err);
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
     fetchData();
+    fetchModels();
   }, []);
 
   const handleQuickLog = async (e: React.FormEvent) => {
@@ -354,7 +380,12 @@ export default function DashboardPage() {
                 <label className="block text-xs font-medium text-zinc-400 mb-1">System Prompt / Input Text</label>
                 <textarea
                   value={mockPrompt}
-                  onChange={(e) => setMockPrompt(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setMockPrompt(val);
+                    // Automatically estimate token count (approx. 4 characters per token)
+                    setMockTokens(Math.max(5, Math.ceil(val.length / 4)));
+                  }}
                   placeholder="Ask something green..."
                   rows={2}
                   className="w-full text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-emerald-500/50 resize-none"
@@ -370,10 +401,19 @@ export default function DashboardPage() {
                     onChange={(e) => setMockModel(e.target.value)}
                     className="w-full text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-emerald-500/50"
                   >
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-3-5-turbo">GPT-3.5 Turbo</option>
-                    <option value="llama-3-70b">Llama 3 70b</option>
+                    {models.length > 0 ? (
+                      models.map((model) => (
+                        <option key={model.name} value={model.name} className="bg-zinc-950 text-white">
+                          {model.displayName}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="llama-3-70b">Llama 3 70b</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>

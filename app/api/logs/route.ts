@@ -116,10 +116,27 @@ export async function POST(req: Request) {
 
     const userId = "default-user";
 
+    // Look up dynamic conversion factors based on modelUsed
+    const modelConfig = await db.modelConfig.findUnique({
+      where: { name: modelUsed }
+    });
+
+    const rates = modelConfig
+      ? {
+          carbon: modelConfig.carbonPer1k,
+          water: modelConfig.waterPer1k,
+          land: modelConfig.landPer1k
+        }
+      : {
+          carbon: CONVERSIONS.carbonPer1k,
+          water: CONVERSIONS.waterPer1k,
+          land: CONVERSIONS.landPer1k
+        };
+
     // Standard conversions
-    const carbonGrams = Number(((tokenCount / 1000) * CONVERSIONS.carbonPer1k).toFixed(4));
-    const waterMl = Number(((tokenCount / 1000) * CONVERSIONS.waterPer1k).toFixed(4));
-    const landCm2 = Number(((tokenCount / 1000) * CONVERSIONS.landPer1k).toFixed(4));
+    const carbonGrams = Number(((tokenCount / 1000) * rates.carbon).toFixed(4));
+    const waterMl = Number(((tokenCount / 1000) * rates.water).toFixed(4));
+    const landCm2 = Number(((tokenCount / 1000) * rates.land).toFixed(4));
 
     const newLog = await db.queryLog.create({
       data: {

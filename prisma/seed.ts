@@ -15,17 +15,29 @@ const PROMPTS_POOL = [
   "Suggest a 7-day itinerary for a trip to Kyoto, Japan, focusing on food and culture",
 ];
 
-const MODELS = [
-  { name: "claude-3-5-sonnet", conversion: { carbon: 0.3, water: 3.0, land: 0.5 } },
-  { name: "gpt-4o", conversion: { carbon: 0.3, water: 3.0, land: 0.5 } },
-  { name: "gpt-3-5-turbo", conversion: { carbon: 0.1, water: 1.0, land: 0.15 } },
-  { name: "llama-3-70b", conversion: { carbon: 0.2, water: 2.0, land: 0.3 } }
+const MODELS_SEED = [
+  { name: "claude-3-5-sonnet", displayName: "Claude 3.5 Sonnet", carbonPer1k: 0.3, waterPer1k: 3.0, landPer1k: 0.5 },
+  { name: "gpt-4o", displayName: "GPT-4o", carbonPer1k: 0.3, waterPer1k: 3.0, landPer1k: 0.5 },
+  { name: "llama-3-70b", displayName: "Llama 3 70b", carbonPer1k: 0.2, waterPer1k: 2.0, landPer1k: 0.3 }
 ];
 
 async function main() {
   console.log("Seeding database...");
 
-  // 1. Create default user
+  // 1. Clear existing model configs and seed them
+  await prisma.modelConfig.deleteMany();
+  console.log("Cleared existing model configurations.");
+
+  const seededModels = [];
+  for (const m of MODELS_SEED) {
+    const dbModel = await prisma.modelConfig.create({
+      data: m
+    });
+    seededModels.push(dbModel);
+    console.log(`Seeded model config: ${dbModel.displayName}`);
+  }
+
+  // 2. Create default user
   const user = await prisma.user.upsert({
     where: { email: "developer@planetprompt.io" },
     update: {},
@@ -38,7 +50,7 @@ async function main() {
 
   console.log(`User created/found: ${user.name} (${user.email})`);
 
-  // Clear existing query logs to start fresh
+  // Clear existing query logs and reports to start fresh
   await prisma.queryLog.deleteMany({
     where: { userId: user.id }
   });
@@ -46,7 +58,7 @@ async function main() {
     where: { userId: user.id }
   });
 
-  // 2. Generate 30 days of history
+  // 3. Generate 30 days of history
   const logs = [];
   const now = new Date();
   
@@ -58,15 +70,15 @@ async function main() {
 
     for (let j = 0; j < numQueries; j++) {
       const promptText = PROMPTS_POOL[Math.floor(Math.random() * PROMPTS_POOL.length)];
-      const modelInfo = MODELS[Math.floor(Math.random() * MODELS.length)];
+      const modelInfo = seededModels[Math.floor(Math.random() * seededModels.length)];
       
       // Random tokens between 150 and 1200
       const tokenCount = Math.floor(Math.random() * 1050) + 150;
       
-      // Conversion: 1000 tokens = 0.3g CO2, 3ml water, 0.5cm2 land (based on the model's multiplier)
-      const carbonGrams = Number(((tokenCount / 1000) * modelInfo.conversion.carbon).toFixed(4));
-      const waterMl = Number(((tokenCount / 1000) * modelInfo.conversion.water).toFixed(4));
-      const landCm2 = Number(((tokenCount / 1000) * modelInfo.conversion.land).toFixed(4));
+      // Conversion: dynamic ratios based on database-seeded metrics
+      const carbonGrams = Number(((tokenCount / 1000) * modelInfo.carbonPer1k).toFixed(4));
+      const waterMl = Number(((tokenCount / 1000) * modelInfo.waterPer1k).toFixed(4));
+      const landCm2 = Number(((tokenCount / 1000) * modelInfo.landPer1k).toFixed(4));
 
       // Scatter the hours throughout the day
       const queryTime = new Date(logDate);
