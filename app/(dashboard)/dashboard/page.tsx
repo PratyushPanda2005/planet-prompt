@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Leaf, 
   Cpu, 
@@ -50,6 +51,7 @@ interface ChartDataPoint {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [recentQueries, setRecentQueries] = useState<QueryLog[]>([]);
@@ -429,14 +431,28 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loggingQuery}
-                className="w-full mt-2 py-2 bg-zinc-900 hover:bg-zinc-850 hover:text-white border border-zinc-800 text-zinc-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {loggingQuery ? "Logging..." : "Log Simulated Query"}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex gap-3 mt-2">
+                <button
+                  type="submit"
+                  disabled={loggingQuery}
+                  className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-850 hover:text-white border border-zinc-800 text-zinc-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {loggingQuery ? "Logging..." : "Log Query"}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!mockPrompt.trim()) return;
+                    router.push(`/advisor?prompt=${encodeURIComponent(mockPrompt)}&model=${encodeURIComponent(mockModel)}`);
+                  }}
+                  disabled={!mockPrompt.trim()}
+                  className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-450 text-zinc-950 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Optimize Prompt
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </form>
           </div>
 

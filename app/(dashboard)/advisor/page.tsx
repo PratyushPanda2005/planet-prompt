@@ -50,8 +50,54 @@ export default function AdvisorPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizeResponse | null>(null);
 
+  const runOptimization = async (prompt: string, model: string) => {
+    if (!prompt.trim()) return;
+
+    try {
+      setLoading(true);
+      setResult(null);
+      setLogStatus("");
+      
+      const res = await fetch("/api/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promptText: prompt,
+          modelUsed: model,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResult(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchModels = async () => {
+    const initPage = async () => {
+      let currentModel = selectedModel;
+      
+      // Parse URL params first
+      let urlPrompt = "";
+      let urlModel = "";
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        urlPrompt = params.get("prompt") || "";
+        urlModel = params.get("model") || "";
+        if (urlPrompt) {
+          setPromptInput(urlPrompt);
+        }
+        if (urlModel) {
+          setSelectedModel(urlModel);
+          currentModel = urlModel;
+        }
+      }
+
+      // Fetch models
       try {
         const res = await fetch("/api/models");
         const data = await res.json();
@@ -59,16 +105,28 @@ export default function AdvisorPage() {
           setModels(data.models);
           if (data.models.length > 0) {
             const names = data.models.map((m: any) => m.name);
-            if (!names.includes(selectedModel)) {
-              setSelectedModel(data.models[0].name);
+            if (!names.includes(currentModel)) {
+              currentModel = data.models[0].name;
+              setSelectedModel(currentModel);
             }
           }
         }
       } catch (err) {
         console.error("Error fetching models:", err);
       }
+
+      // Run optimization if URL prompt exists
+      if (urlPrompt) {
+        await runOptimization(urlPrompt, currentModel);
+        
+        // Clean URL
+        if (typeof window !== "undefined") {
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      }
     };
-    fetchModels();
+    initPage();
   }, []);
   
   // Copy action states
@@ -81,30 +139,7 @@ export default function AdvisorPage() {
 
   const handleOptimize = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!promptInput.trim()) return;
-
-    try {
-      setLoading(true);
-      setResult(null);
-      setLogStatus("");
-      
-      const res = await fetch("/api/optimize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          promptText: promptInput,
-          modelUsed: selectedModel,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setResult(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    await runOptimization(promptInput, selectedModel);
   };
 
   const copyToClipboard = (text: string, type: "original" | "optimized") => {
