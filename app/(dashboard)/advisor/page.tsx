@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Sparkles, 
   Copy, 
@@ -39,10 +39,37 @@ interface OptimizeResponse {
 }
 
 export default function AdvisorPage() {
+  interface ModelOption {
+    name: string;
+    displayName: string;
+  }
+
+  const [models, setModels] = useState<ModelOption[]>([]);
   const [promptInput, setPromptInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("claude-3-5-sonnet");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizeResponse | null>(null);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const res = await fetch("/api/models");
+        const data = await res.json();
+        if (data.success && data.models) {
+          setModels(data.models);
+          if (data.models.length > 0) {
+            const names = data.models.map((m: any) => m.name);
+            if (!names.includes(selectedModel)) {
+              setSelectedModel(data.models[0].name);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching models:", err);
+      }
+    };
+    fetchModels();
+  }, []);
   
   // Copy action states
   const [copiedOriginal, setCopiedOriginal] = useState(false);
@@ -150,10 +177,19 @@ export default function AdvisorPage() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="w-full text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-emerald-500/50"
               >
-                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (default)</option>
-                <option value="gpt-4o">GPT-4o</option>
-                <option value="gpt-3-5-turbo">GPT-3.5 Turbo</option>
-                <option value="llama-3-70b">Llama 3 70b</option>
+                {models.length > 0 ? (
+                  models.map((model) => (
+                    <option key={model.name} value={model.name} className="bg-zinc-950 text-white">
+                      {model.displayName}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (default)</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="llama-3-70b">Llama 3 70b</option>
+                  </>
+                )}
               </select>
             </div>
 

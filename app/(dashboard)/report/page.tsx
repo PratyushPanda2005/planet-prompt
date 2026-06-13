@@ -44,18 +44,33 @@ export default function ReportPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 
-  // Generate the last 6 months for the selector
+  // Fetch active report billing months dynamically from the database
   useEffect(() => {
-    const months: string[] = [];
-    const date = new Date();
-    for (let i = 0; i < 6; i++) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      months.push(`${year}-${month}`);
-      date.setMonth(date.getMonth() - 1);
-    }
-    setAvailableMonths(months);
-    setSelectedMonth(months[0]); // default to current month
+    const fetchMonths = async () => {
+      try {
+        const res = await fetch("/api/report/months");
+        const data = await res.json();
+        if (data.success && data.months && data.months.length > 0) {
+          setAvailableMonths(data.months);
+          setSelectedMonth(data.months[0]);
+        } else {
+          // Fallback to static last 6 months list if DB endpoint has no values or fails
+          const months: string[] = [];
+          const date = new Date();
+          for (let i = 0; i < 6; i++) {
+            const year = date.getFullYear();
+            const monthStr = String(date.getMonth() + 1).padStart(2, "0");
+            months.push(`${year}-${monthStr}`);
+            date.setMonth(date.getMonth() - 1);
+          }
+          setAvailableMonths(months);
+          setSelectedMonth(months[0]);
+        }
+      } catch (err) {
+        console.error("Error fetching available months:", err);
+      }
+    };
+    fetchMonths();
   }, []);
 
   const fetchReport = async (month: string, forceRegenerate = false) => {
