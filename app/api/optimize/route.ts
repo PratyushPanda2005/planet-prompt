@@ -111,7 +111,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.SARVAM_API_KEY;
     const originalTokenCount = estimateTokens(promptText);
 
     const gatekeeperResult = await classifyPrompt(promptText);
@@ -160,51 +160,45 @@ export async function POST(req: Request) {
 
     if (apiKey) {
       try {
-        // Real Gemini API call via fetch
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        // Real Sarvam AI API call via fetch
+        const url = "https://api.sarvam.ai/v1/chat/completions";
         const response = await fetch(url, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "api-subscription-key": apiKey,
           },
           body: JSON.stringify({
-            contents: [
+            model: "sarvam-30b",
+            messages: [
               {
-                parts: [
-                  {
-                    text: `You are a prompt optimization AI. Your task is to rewrite the user's prompt to be leaner, more concise, and token-efficient while retaining all core meaning, instructions, and constraints. Do not add conversational fluff, intro, or explanations. Output ONLY the optimized prompt text.
+                role: "user",
+                content: `You are a prompt optimization AI. Your task is to rewrite the user's prompt to be leaner, more concise, and token-efficient while retaining all core meaning, instructions, and constraints. Do not add conversational fluff, intro, or explanations. Output ONLY the optimized prompt text.
 
 User Prompt:
 "${promptText}"`,
-                  },
-                ],
               },
             ],
-            generationConfig: {
-              maxOutputTokens: 1024,
-              temperature: 0.2,
-            },
+            temperature: 0.2,
           }),
         });
 
         if (response.ok) {
           const result = await response.json();
           if (
-            result.candidates &&
-            result.candidates[0] &&
-            result.candidates[0].content &&
-            result.candidates[0].content.parts &&
-            result.candidates[0].content.parts[0] &&
-            result.candidates[0].content.parts[0].text
+            result.choices &&
+            result.choices[0] &&
+            result.choices[0].message &&
+            result.choices[0].message.content
           ) {
-            optimizedText = result.candidates[0].content.parts[0].text.trim();
+            optimizedText = result.choices[0].message.content.trim();
             isMock = false;
           }
         } else {
-          console.warn("Gemini API returned error status:", response.status);
+          console.warn("Sarvam AI API returned error status:", response.status);
         }
       } catch (err) {
-        console.error("Failed to connect to Gemini API, falling back to local heuristic:", err);
+        console.error("Failed to connect to Sarvam AI API, falling back to local heuristic:", err);
       }
     }
 
