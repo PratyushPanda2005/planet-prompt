@@ -82,7 +82,6 @@ export default function AdvisorPage() {
     const initPage = async () => {
       let currentModel = selectedModel;
       
-      // Parse URL params first
       let urlPrompt = "";
       let urlModel = "";
       if (typeof window !== "undefined") {
@@ -98,7 +97,6 @@ export default function AdvisorPage() {
         }
       }
 
-      // Fetch models
       try {
         const res = await fetch("/api/models");
         const data = await res.json();
@@ -116,11 +114,9 @@ export default function AdvisorPage() {
         console.error("Error fetching models:", err);
       }
 
-      // Run optimization if URL prompt exists
       if (urlPrompt) {
         await runOptimization(urlPrompt, currentModel);
         
-        // Clean URL
         if (typeof window !== "undefined") {
           const newUrl = window.location.pathname;
           window.history.replaceState({}, document.title, newUrl);
@@ -130,11 +126,9 @@ export default function AdvisorPage() {
     initPage();
   }, []);
   
-  // Copy action states
   const [copiedOriginal, setCopiedOriginal] = useState(false);
   const [copiedOptimized, setCopiedOptimized] = useState(false);
 
-  // Db logging action states
   const [loggingType, setLoggingType] = useState<"original" | "optimized" | null>(null);
   const [logStatus, setLogStatus] = useState("");
 
@@ -192,10 +186,10 @@ export default function AdvisorPage() {
     <div className="flex flex-col gap-8 h-full">
       {/* Title */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-foreground flex items-center gap-2">
           Smart Prompt Advisor
         </h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <p className="text-xs text-text-muted mt-1">
           Rewrite system instructions to minimize token usage and environmental overhead.
         </p>
       </div>
@@ -203,23 +197,23 @@ export default function AdvisorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Prompt Input Form Panel - takes 1 col on lg */}
-        <div className="glass-panel p-6 flex flex-col justify-between h-fit">
+        <div className="glass-panel p-6 flex flex-col justify-between h-fit rounded-md">
           <form onSubmit={handleOptimize} className="space-y-4">
-            <div className="flex items-center gap-1.5 text-cyan-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-accent-cyan text-[10px] font-medium uppercase tracking-wider">
               <Sparkles className="h-4 w-4" />
               Rewrite Engine
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Model Architecture Target</label>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Model Architecture Target</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-emerald-500/50"
+                className="w-full text-xs bg-background border border-card-border rounded-sm px-3 py-2 text-foreground focus:outline-none focus:border-accent-green/50 cursor-pointer font-normal"
               >
                 {models.length > 0 ? (
                   models.map((model) => (
-                    <option key={model.name} value={model.name} className="bg-zinc-950 text-white">
+                    <option key={model.name} value={model.name} className="bg-background text-foreground">
                       {model.displayName}
                     </option>
                   ))
@@ -234,13 +228,13 @@ export default function AdvisorPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Original Prompt / Context</label>
+              <label className="block text-xs font-medium text-text-muted mb-1.5">Original Prompt / Context</label>
               <textarea
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
                 placeholder="Paste your system instructions or long LLM prompts here..."
                 rows={10}
-                className="w-full text-xs bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-emerald-500/50 resize-none font-mono"
+                className="w-full text-xs bg-background border border-card-border rounded-sm px-3 py-2 text-foreground focus:outline-none focus:border-accent-green/50 resize-none font-mono font-normal"
                 required
               />
             </div>
@@ -248,11 +242,11 @@ export default function AdvisorPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-450 text-zinc-950 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 bg-accent-green hover:bg-accent-green/90 text-background font-medium rounded-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <div className="h-4 w-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="h-4 w-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
                   Optimizing Prompt...
                 </>
               ) : (
@@ -269,47 +263,47 @@ export default function AdvisorPage() {
         <div className="lg:col-span-2 flex flex-col gap-6">
           
           {!result && !loading && (
-            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] border-dashed">
-              <div className="h-14 w-14 rounded-full bg-zinc-900 border border-zinc-850 flex items-center justify-center text-zinc-500 mb-4 animate-pulse">
+            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] border-dashed rounded-md">
+              <div className="h-14 w-14 rounded-sm bg-card-bg border border-card-border flex items-center justify-center text-text-muted mb-4 animate-pulse">
                 <ArrowLeftRight className="h-6 w-6" />
               </div>
-              <h3 className="text-zinc-300 font-bold text-sm">Waiting for Analysis</h3>
-              <p className="text-xs text-zinc-550 max-w-xs mt-1.5">
+              <h3 className="text-foreground font-medium text-sm">Waiting for Analysis</h3>
+              <p className="text-xs text-text-muted max-w-xs mt-1.5">
                 Paste your prompt in the editor card to estimate its environmental footprint and generate a leaner rewrite.
               </p>
             </div>
           )}
 
           {loading && (
-            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px]">
-              <div className="h-10 w-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-              <h3 className="text-zinc-300 font-bold text-sm">Consulting AI Advisor</h3>
-              <p className="text-xs text-zinc-550 max-w-xs mt-1.5">
+            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] rounded-md">
+              <div className="h-10 w-10 border-2 border-accent-green border-t-transparent rounded-full animate-spin mb-4" />
+              <h3 className="text-foreground font-medium text-sm">Consulting AI Advisor</h3>
+              <p className="text-xs text-text-muted max-w-xs mt-1.5">
                 Calculating carbon metrics and trimming redundant phrases...
               </p>
             </div>
           )}
 
           {result && result.alreadyOptimized ? (
-            <div className="glass-panel p-8 flex flex-col items-center justify-center text-center min-h-[430px] h-auto border-emerald-500/30 bg-emerald-500/5">
-              <div className="h-16 w-16 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+            <div className="glass-panel p-8 flex flex-col items-center justify-center text-center min-h-[430px] h-auto border-accent-green/30 bg-accent-green/5 rounded-md">
+              <div className="h-16 w-16 rounded-sm bg-accent-green/25 border border-accent-green/50 flex items-center justify-center text-accent-green mb-6">
                 <Check className="h-8 w-8" />
               </div>
-              <h3 className="text-emerald-400 font-extrabold text-2xl tracking-tight">Great prompt, already optimized!</h3>
-              <p className="text-zinc-400 max-w-sm mt-3 text-sm">
+              <h3 className="text-accent-green font-medium text-2xl tracking-tight">Great prompt, already optimized!</h3>
+              <p className="text-text-muted max-w-sm mt-3 text-sm">
                 Your prompt is already highly efficient and clear. No further optimization is required. You are good to go!
               </p>
               
-              <div className="mt-8 bg-zinc-950/50 border border-emerald-950/20 p-4 rounded-xl flex items-center gap-6 text-left">
+              <div className="mt-8 bg-background border border-card-border p-4 rounded-sm flex items-center gap-6 text-left">
                 <div>
-                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Original Token Cost</div>
-                  <div className="text-xl font-bold text-zinc-200">{result.original.tokens}</div>
+                  <div className="text-[10px] text-text-muted font-medium uppercase tracking-wider mb-1">Original Token Cost</div>
+                  <div className="text-xl font-medium text-foreground">{result.original.tokens}</div>
                 </div>
-                <div className="w-px h-8 bg-zinc-800"></div>
+                <div className="w-px h-8 bg-card-border"></div>
                 <div>
-                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Carbon Footprint</div>
-                  <div className="text-xl font-bold text-zinc-200 flex items-center gap-1.5">
-                    <Cpu className="h-4 w-4 text-emerald-400" />
+                  <div className="text-[10px] text-text-muted font-medium uppercase tracking-wider mb-1">Carbon Footprint</div>
+                  <div className="text-xl font-medium text-foreground flex items-center gap-1.5">
+                    <Cpu className="h-4 w-4 text-accent-green" />
                     {result.original.footprint.carbonGrams.toFixed(2)}g
                   </div>
                 </div>
@@ -319,13 +313,13 @@ export default function AdvisorPage() {
                 <button
                   disabled={loggingType !== null}
                   onClick={() => handleLogToDb("original")}
-                  className="w-full py-2 bg-emerald-500 hover:bg-emerald-450 text-zinc-950 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                  className="w-full py-2 bg-accent-green hover:bg-accent-green/90 text-background text-xs font-medium rounded-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                 >
                   <Database className="h-3.5 w-3.5" />
                   {loggingType === "original" ? "Logging..." : "Log Prompt to Dashboard"}
                 </button>
                 {logStatus && (
-                  <div className={`text-[11px] font-semibold ${logStatus.includes("Error") ? "text-red-400" : "text-emerald-400 animate-pulse"}`}>
+                  <div className={`text-[11px] font-medium ${logStatus.includes("Error") ? "text-red-400" : "text-accent-green"}`}>
                     {logStatus}
                   </div>
                 )}
@@ -334,21 +328,21 @@ export default function AdvisorPage() {
           ) : result && (
             <>
               {/* Savings Highlight Badge */}
-              <div className="glass-panel p-4 bg-emerald-500/5 border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="glass-panel p-4 bg-accent-green/5 border border-accent-green/20 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-md">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                    <Zap className="h-5 w-5 text-emerald-400" />
+                  <div className="h-10 w-10 rounded-sm bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-accent-green" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Resource Savings: {result.savings.percent}%</h3>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      Reduced tokens by <span className="font-semibold text-emerald-400">{result.savings.tokens}</span> units.
+                    <h3 className="text-sm font-medium text-foreground">Resource Savings: {result.savings.percent}%</h3>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      Reduced tokens by <span className="font-medium text-accent-green">{result.savings.tokens}</span> units.
                     </p>
                   </div>
                 </div>
 
                 {result.isMock && (
-                  <span className="text-[10px] text-zinc-550 border border-zinc-800 bg-zinc-900 px-2 py-0.5 rounded-full font-semibold">
+                  <span className="text-[10px] text-text-muted border border-card-border bg-card-bg px-2 py-0.5 rounded-sm font-normal">
                     Heuristic Fallback Engine
                   </span>
                 )}
@@ -358,48 +352,48 @@ export default function AdvisorPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Original Prompt Card */}
-                <div className="glass-panel p-5 flex flex-col justify-between gap-4 bg-zinc-950/20">
+                <div className="glass-panel p-5 flex flex-col justify-between gap-4 bg-card-bg/10 rounded-md">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Original Prompt</span>
+                      <span className="text-xs text-text-muted font-medium uppercase tracking-wider">Original Prompt</span>
                       <button 
                         onClick={() => copyToClipboard(result.original.text, "original")}
-                        className="text-zinc-500 hover:text-white p-1 rounded hover:bg-zinc-900 transition-colors"
+                        className="text-text-muted hover:text-foreground p-1 rounded-sm hover:bg-background transition-colors cursor-pointer"
                         title="Copy original"
                       >
-                        {copiedOriginal ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                        {copiedOriginal ? <Check className="h-4 w-4 text-accent-green" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
-                    <div className="bg-zinc-950/50 border border-zinc-900 rounded-lg p-3 h-40 overflow-y-auto text-xs font-mono text-zinc-400 whitespace-pre-wrap">
+                    <div className="bg-background border border-card-border rounded-sm p-3 h-40 overflow-y-auto text-xs font-mono text-text-muted whitespace-pre-wrap font-normal">
                       {result.original.text}
                     </div>
                   </div>
 
                   {/* Footprint details sub-card */}
-                  <div className="border-t border-zinc-900 pt-3 flex flex-col gap-2">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Footprint Breakdown</span>
+                  <div className="border-t border-card-border pt-3 flex flex-col gap-2">
+                    <span className="text-[10px] font-medium text-text-muted uppercase tracking-wider">Footprint Breakdown</span>
                     <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-850/50">
-                        <Cpu className="h-3.5 w-3.5 mx-auto text-zinc-500 mb-1" />
-                        <p className="text-xs font-bold text-zinc-300">{result.original.footprint.carbonGrams.toFixed(2)}g</p>
-                        <p className="text-[9px] text-zinc-500">CO₂</p>
+                      <div className="bg-card-bg/60 p-2 rounded-sm border border-card-border/50">
+                        <Cpu className="h-3.5 w-3.5 mx-auto text-text-muted mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.original.footprint.carbonGrams.toFixed(2)}g</p>
+                        <p className="text-[9px] text-text-muted">CO₂</p>
                       </div>
-                      <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-850/50">
-                        <Droplet className="h-3.5 w-3.5 mx-auto text-zinc-500 mb-1" />
-                        <p className="text-xs font-bold text-zinc-300">{result.original.footprint.waterMl.toFixed(1)}ml</p>
-                        <p className="text-[9px] text-zinc-500">H₂O</p>
+                      <div className="bg-card-bg/60 p-2 rounded-sm border border-card-border/50">
+                        <Droplet className="h-3.5 w-3.5 mx-auto text-text-muted mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.original.footprint.waterMl.toFixed(1)}ml</p>
+                        <p className="text-[9px] text-text-muted">H₂O</p>
                       </div>
-                      <div className="bg-zinc-900/60 p-2 rounded-lg border border-zinc-850/50">
-                        <Compass className="h-3.5 w-3.5 mx-auto text-zinc-500 mb-1" />
-                        <p className="text-xs font-bold text-zinc-300">{result.original.footprint.landCm2.toFixed(2)}cm²</p>
-                        <p className="text-[9px] text-zinc-500">Land</p>
+                      <div className="bg-card-bg/60 p-2 rounded-sm border border-card-border/50">
+                        <Compass className="h-3.5 w-3.5 mx-auto text-text-muted mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.original.footprint.landCm2.toFixed(2)}cm²</p>
+                        <p className="text-[9px] text-text-muted">Land</p>
                       </div>
                     </div>
                     
                     <button
                       disabled={loggingType !== null}
                       onClick={() => handleLogToDb("original")}
-                      className="w-full mt-1.5 py-1.5 bg-zinc-900/50 hover:bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-850 hover:border-zinc-800 text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      className="w-full mt-1.5 py-1.5 bg-card-bg/50 hover:bg-card-bg text-text-muted hover:text-foreground border border-card-border text-[11px] font-medium rounded-sm flex items-center justify-center gap-1 cursor-pointer transition-colors"
                     >
                       <Database className="h-3.5 w-3.5" />
                       {loggingType === "original" ? "Logging..." : "Log Original (Unoptimised)"}
@@ -408,48 +402,48 @@ export default function AdvisorPage() {
                 </div>
 
                 {/* Optimized Prompt Card */}
-                <div className="glass-panel p-5 flex flex-col justify-between gap-4 border-emerald-500/20 bg-emerald-500/[0.01]">
+                <div className="glass-panel p-5 flex flex-col justify-between gap-4 border-accent-green/20 bg-accent-green/[0.01] rounded-md">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Optimized Suggestions</span>
+                      <span className="text-xs text-accent-green font-medium uppercase tracking-wider">Optimized Suggestions</span>
                       <button 
                         onClick={() => copyToClipboard(result.optimized.text, "optimized")}
-                        className="text-emerald-450 hover:text-emerald-300 p-1 rounded hover:bg-emerald-950/20 transition-colors"
+                        className="text-accent-green hover:text-accent-green/80 p-1 rounded-sm hover:bg-accent-green/10 transition-colors cursor-pointer"
                         title="Copy optimized text"
                       >
-                        {copiedOptimized ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-emerald-400" />}
+                        {copiedOptimized ? <Check className="h-4 w-4 text-accent-green" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
-                    <div className="bg-zinc-950/50 border border-emerald-950/10 rounded-lg p-3 h-40 overflow-y-auto text-xs font-mono text-zinc-200 whitespace-pre-wrap">
+                    <div className="bg-background border border-accent-green/10 rounded-sm p-3 h-40 overflow-y-auto text-xs font-mono text-foreground whitespace-pre-wrap font-normal">
                       {result.optimized.text}
                     </div>
                   </div>
 
                   {/* Footprint details sub-card */}
-                  <div className="border-t border-zinc-900 pt-3 flex flex-col gap-2">
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Footprint Breakdown</span>
+                  <div className="border-t border-card-border pt-3 flex flex-col gap-2">
+                    <span className="text-[10px] font-medium text-accent-green uppercase tracking-wider">Footprint Breakdown</span>
                     <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-emerald-950/5 p-2 rounded-lg border border-emerald-500/10">
-                        <Cpu className="h-3.5 w-3.5 mx-auto text-emerald-400 mb-1" />
-                        <p className="text-xs font-bold text-white">{result.optimized.footprint.carbonGrams.toFixed(2)}g</p>
-                        <p className="text-[9px] text-emerald-450">CO₂</p>
+                      <div className="bg-accent-green/5 p-2 rounded-sm border border-accent-green/10">
+                        <Cpu className="h-3.5 w-3.5 mx-auto text-accent-green mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.optimized.footprint.carbonGrams.toFixed(2)}g</p>
+                        <p className="text-[9px] text-accent-green">CO₂</p>
                       </div>
-                      <div className="bg-cyan-950/5 p-2 rounded-lg border border-cyan-500/10">
-                        <Droplet className="h-3.5 w-3.5 mx-auto text-cyan-400 mb-1" />
-                        <p className="text-xs font-bold text-white">{result.optimized.footprint.waterMl.toFixed(1)}ml</p>
-                        <p className="text-[9px] text-cyan-450">H₂O</p>
+                      <div className="bg-accent-cyan/5 p-2 rounded-sm border border-accent-cyan/10">
+                        <Droplet className="h-3.5 w-3.5 mx-auto text-accent-cyan mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.optimized.footprint.waterMl.toFixed(1)}ml</p>
+                        <p className="text-[9px] text-accent-cyan">H₂O</p>
                       </div>
-                      <div className="bg-amber-950/5 p-2 rounded-lg border border-amber-500/10">
-                        <Compass className="h-3.5 w-3.5 mx-auto text-amber-400 mb-1" />
-                        <p className="text-xs font-bold text-white">{result.optimized.footprint.landCm2.toFixed(2)}cm²</p>
-                        <p className="text-[9px] text-amber-450">Land</p>
+                      <div className="bg-accent-amber/5 p-2 rounded-sm border border-accent-amber/10">
+                        <Compass className="h-3.5 w-3.5 mx-auto text-accent-amber mb-1" />
+                        <p className="text-xs font-medium text-foreground">{result.optimized.footprint.landCm2.toFixed(2)}cm²</p>
+                        <p className="text-[9px] text-accent-amber">Land</p>
                       </div>
                     </div>
 
                     <button
                       disabled={loggingType !== null}
                       onClick={() => handleLogToDb("optimized")}
-                      className="w-full mt-1.5 py-1.5 bg-emerald-500 hover:bg-emerald-450 text-zinc-950 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                      className="w-full mt-1.5 py-1.5 bg-accent-green hover:bg-accent-green/90 text-background text-[11px] font-medium rounded-sm flex items-center justify-center gap-1 cursor-pointer transition-colors"
                     >
                       <Database className="h-3.5 w-3.5" />
                       {loggingType === "optimized" ? "Logging..." : "Log & Execute Optimized"}
@@ -460,7 +454,7 @@ export default function AdvisorPage() {
               </div>
 
               {logStatus && (
-                <div className={`text-xs font-semibold text-center ${logStatus.includes("Error") ? "text-red-400" : "text-emerald-405 animate-pulse"}`}>
+                <div className={`text-xs font-medium text-center ${logStatus.includes("Error") ? "text-red-400" : "text-accent-green"}`}>
                   {logStatus}
                 </div>
               )}
