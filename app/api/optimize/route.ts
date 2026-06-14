@@ -118,7 +118,7 @@ export async function POST(req: Request) {
 
     if (gatekeeperResult.complexity === "LOW") {
       console.log("low - early return");
-      
+
       const modelConfig = await db.modelConfig.findUnique({
         where: { name: modelUsed }
       });
@@ -218,7 +218,7 @@ User Prompt:
     // SAFETY NET: If the optimizer didn't actually reduce the token count, treat it as already optimized!
     if (optimizedTokenCount >= originalTokenCount || optimizedText.trim().toLowerCase() === promptText.trim().toLowerCase()) {
       console.log("identical or no token reduction - early return");
-      
+
       const modelConfig = await db.modelConfig.findUnique({
         where: { name: modelUsed }
       });
