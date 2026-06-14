@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, LayoutDashboard, Sparkles, FileText, ArrowLeft, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Leaf, LayoutDashboard, Sparkles, FileText, ArrowLeft, Menu, X, Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 
 export default function DashboardLayout({
@@ -13,6 +13,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  // Synchronise theme with document.documentElement
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -21,24 +27,20 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen bg-[#030712] text-zinc-100 overflow-hidden font-sans">
-      
-      {/* Background glow effects */}
-      <div className="absolute top-0 right-0 w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-[20%] w-[40%] h-[40%] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
+    <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans" data-theme={theme}>
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-zinc-850 bg-zinc-950/70 backdrop-blur-md z-30">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-card-border bg-sidebar-bg/70 backdrop-blur-md z-30">
         <div className="flex flex-col flex-1 min-h-0">
-          
+
           {/* Logo Area */}
-          <div className="flex items-center h-16 px-6 border-b border-zinc-900">
-            <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                <Leaf className="h-4.5 w-4.5 text-emerald-400" />
+          <div className="flex items-center h-16 px-6 border-b border-card-border">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+              <div className="h-8 w-8 rounded-sm bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
+                <Leaf className="h-4.5 w-4.5 text-accent-green" />
               </div>
-              <span className="font-semibold text-base tracking-tight text-white">
-                Planet<span className="text-emerald-400">Prompt</span>
+              <span className="font-medium text-base tracking-tight text-foreground">
+                Planet<span className="text-accent-green font-medium">Prompt</span>
               </span>
             </Link>
           </div>
@@ -52,13 +54,12 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                    isActive
-                      ? "bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-400 pl-3.5"
-                      : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm font-medium transition-all duration-200 group ${isActive
+                    ? "bg-accent-green/10 text-accent-green border-l-2 border-accent-green pl-3.5"
+                    : "text-text-muted hover:bg-card-bg hover:text-foreground"
+                    }`}
                 >
-                  <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-emerald-400" : "text-zinc-400 group-hover:text-zinc-300"}`} />
+                  <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-accent-green" : "text-text-muted group-hover:text-foreground"}`} />
                   {item.name}
                 </Link>
               );
@@ -66,12 +67,12 @@ export default function DashboardLayout({
           </nav>
 
           {/* User Info Area */}
-          <div className="p-4 border-t border-zinc-900 flex items-center justify-between">
+          <div className="p-4 border-t border-card-border flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <UserButton showName appearance={{
                 elements: {
                   userButtonOuterIdentifier: {
-                    color: "#ffffff",
+                    color: "var(--foreground)",
                     fontSize: "0.875rem",
                     fontWeight: 500,
                   },
@@ -79,10 +80,24 @@ export default function DashboardLayout({
                 }
               }} />
             </div>
-            
-            <Link href="/" className="text-zinc-500 hover:text-zinc-300 transition-colors p-1.5 rounded-lg hover:bg-zinc-900" title="Exit Dashboard">
-              <ArrowLeft className="h-4.5 w-4.5" />
-            </Link>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="text-text-muted hover:text-foreground transition-colors p-2 rounded-sm bg-card-bg border border-card-border cursor-pointer flex items-center justify-center"
+                title="Toggle Theme"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </button>
+
+              <Link href="/" className="text-text-muted hover:text-foreground transition-colors p-2 rounded-sm bg-card-bg border border-card-border flex items-center justify-center" title="Exit Dashboard">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
         </div>
@@ -90,24 +105,38 @@ export default function DashboardLayout({
 
       {/* Mobile Top Header */}
       <div className="flex flex-col flex-1 md:pl-64 overflow-hidden h-full">
-        
-        <header className="flex items-center justify-between md:hidden h-16 px-6 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-45">
+
+        <header className="flex items-center justify-between md:hidden h-16 px-6 border-b border-card-border bg-sidebar-bg/80 backdrop-blur-md z-45">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-              <Leaf className="h-4.5 w-4.5 text-emerald-400" />
+            <div className="h-8 w-8 rounded-sm bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
+              <Leaf className="h-4.5 w-4.5 text-accent-green" />
             </div>
-            <span className="font-semibold text-base tracking-tight text-white">
-              Planet<span className="text-emerald-400">Prompt</span>
+            <span className="font-medium text-base tracking-tight text-foreground">
+              Planet<span className="text-accent-green font-medium">Prompt</span>
             </span>
           </Link>
 
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-zinc-400 hover:text-white p-2 focus:outline-none"
-            aria-label="Toggle navigation"
-          >
-            {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="text-text-muted hover:text-foreground transition-colors p-2 rounded-sm bg-card-bg border border-card-border cursor-pointer flex items-center justify-center"
+              title="Toggle Theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-text-muted hover:text-foreground p-2 focus:outline-none cursor-pointer"
+              aria-label="Toggle navigation"
+            >
+              {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Navigation Drawer */}
@@ -115,14 +144,14 @@ export default function DashboardLayout({
           <div className="md:hidden fixed inset-0 z-40 flex">
             {/* Drawer backdrop */}
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-            
-            <nav className="relative flex flex-col w-4/5 max-w-sm h-full bg-[#090d16] border-r border-zinc-800 p-6 z-50">
+
+            <nav className="relative flex flex-col w-4/5 max-w-sm h-full bg-sidebar-bg border-r border-card-border p-6 z-50">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5 text-emerald-400" />
-                  <span className="font-bold text-white">PlanetPrompt</span>
+                  <Leaf className="h-5 w-5 text-accent-green" />
+                  <span className="font-medium text-foreground">PlanetPrompt</span>
                 </div>
-                <button onClick={() => setSidebarOpen(false)} className="text-zinc-450">
+                <button onClick={() => setSidebarOpen(false)} className="text-text-muted">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -136,11 +165,10 @@ export default function DashboardLayout({
                       key={item.name}
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-emerald-500/15 text-emerald-400 font-semibold"
-                          : "text-zinc-400 hover:bg-zinc-900"
-                      }`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-sm text-sm font-medium transition-all ${isActive
+                        ? "bg-accent-green/15 text-accent-green"
+                        : "text-text-muted hover:bg-card-bg hover:text-foreground"
+                        }`}
                     >
                       <Icon className="h-5 w-5" />
                       {item.name}
@@ -149,11 +177,11 @@ export default function DashboardLayout({
                 })}
               </div>
 
-              <div className="pt-6 border-t border-zinc-800 flex items-center gap-3">
+              <div className="pt-6 border-t border-card-border flex items-center gap-3">
                 <UserButton showName appearance={{
                   elements: {
                     userButtonOuterIdentifier: {
-                      color: "#ffffff",
+                      color: "var(--foreground)",
                       fontSize: "0.875rem",
                       fontWeight: 500,
                     },
@@ -166,7 +194,7 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none p-6 md:p-10">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none p-6 md:p-10 bg-background">
           <div className="max-w-6xl mx-auto h-full animate-fade-in">
             {children}
           </div>
