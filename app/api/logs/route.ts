@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateDbUser } from "@/lib/auth-helpers";
+import { auth } from "@clerk/nextjs/server";
 
 // Hardcoded conversion factors (1000 tokens)
 const CONVERSIONS = {
@@ -131,6 +132,8 @@ export async function POST(req: Request) {
     }
     const userId = dbUser.id;
 
+    const { orgId } = await auth();
+
     // Look up dynamic conversion factors based on modelUsed
     const modelConfig = await db.modelConfig.findUnique({
       where: { name: modelUsed }
@@ -162,6 +165,7 @@ export async function POST(req: Request) {
         carbonGrams,
         waterMl,
         landCm2,
+        organizationId: orgId ?? null,
       },
     });
 
@@ -174,3 +178,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

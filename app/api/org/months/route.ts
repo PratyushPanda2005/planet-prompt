@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getOrCreateDbUser } from "@/lib/auth-helpers";
+import { getOrgContext } from "@/lib/auth-helpers";
 
 export async function GET() {
   try {
-    const dbUser = await getOrCreateDbUser();
-    if (!dbUser) {
+    const context = await getOrgContext();
+    if (!context) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
-    const userId = dbUser.id;
-    
-    // Query logs to find all dates where query logs exist
+    if (context.orgRole !== "org:admin") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
+    const orgId = context.orgId;
+
+    // Query logs to find all dates where query logs exist for this org
     const logs = await db.queryLog.findMany({
-      where: { userId },
+      where: { organizationId: orgId },
       select: { createdAt: true },
       orderBy: { createdAt: "desc" }
     });
@@ -28,9 +35,9 @@ export async function GET() {
       monthsSet.add(`${year}-${month}`);
     });
 
-    // Also look at generated reports
-    const reports = await db.report.findMany({
-      where: { userId },
+    // Also look at generated organization reports
+    const reports = await db.orgReport.findMany({
+      where: { organizationId: orgId },
       select: { month: true },
       orderBy: { month: "desc" }
     });
@@ -46,7 +53,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, months });
   } catch (error) {
-    console.error("Error in GET /api/report/months:", error);
+    console.error("Error in GET /api/org/months:", error);
     return NextResponse.json(
       { success: false, error: "Internal Server Error" },
       { status: 500 }
