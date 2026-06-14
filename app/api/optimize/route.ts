@@ -114,6 +114,47 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     const originalTokenCount = estimateTokens(promptText);
 
+    const gatekeeperResult = await classifyPrompt(promptText);
+
+    if (gatekeeperResult.complexity === "LOW") {
+      console.log("low - early return");
+      
+      const modelConfig = await db.modelConfig.findUnique({
+        where: { name: modelUsed }
+      });
+
+      const rates = modelConfig ? {
+        carbon: modelConfig.carbonPer1k,
+        water: modelConfig.waterPer1k,
+        land: modelConfig.landPer1k
+      } : {
+        carbon: CONVERSIONS.carbonPer1k,
+        water: CONVERSIONS.waterPer1k,
+        land: CONVERSIONS.landPer1k
+      };
+
+      const originalFootprint = {
+        carbonGrams: Number(((originalTokenCount / 1000) * rates.carbon).toFixed(4)),
+        waterMl: Number(((originalTokenCount / 1000) * rates.water).toFixed(4)),
+        landCm2: Number(((originalTokenCount / 1000) * rates.land).toFixed(4)),
+      };
+
+      return NextResponse.json({
+        success: true,
+        alreadyOptimized: true,
+        original: {
+          text: promptText,
+          tokens: originalTokenCount,
+          footprint: originalFootprint,
+        },
+        savings: {
+          tokens: 0,
+          percent: 0,
+          message: "great prompt , already optimized"
+        }
+      });
+    }
+
     let optimizedText = "";
     let isMock = true;
 
@@ -173,6 +214,46 @@ User Prompt:
     }
 
     const optimizedTokenCount = estimateTokens(optimizedText);
+
+    // SAFETY NET: If the optimizer didn't actually reduce the token count, treat it as already optimized!
+    if (optimizedTokenCount >= originalTokenCount || optimizedText.trim().toLowerCase() === promptText.trim().toLowerCase()) {
+      console.log("identical or no token reduction - early return");
+      
+      const modelConfig = await db.modelConfig.findUnique({
+        where: { name: modelUsed }
+      });
+
+      const rates = modelConfig ? {
+        carbon: modelConfig.carbonPer1k,
+        water: modelConfig.waterPer1k,
+        land: modelConfig.landPer1k
+      } : {
+        carbon: CONVERSIONS.carbonPer1k,
+        water: CONVERSIONS.waterPer1k,
+        land: CONVERSIONS.landPer1k
+      };
+
+      const originalFootprint = {
+        carbonGrams: Number(((originalTokenCount / 1000) * rates.carbon).toFixed(4)),
+        waterMl: Number(((originalTokenCount / 1000) * rates.water).toFixed(4)),
+        landCm2: Number(((originalTokenCount / 1000) * rates.land).toFixed(4)),
+      };
+
+      return NextResponse.json({
+        success: true,
+        alreadyOptimized: true,
+        original: {
+          text: promptText,
+          tokens: originalTokenCount,
+          footprint: originalFootprint,
+        },
+        savings: {
+          tokens: 0,
+          percent: 0,
+          message: "great prompt , already optimized"
+        }
+      });
+    }
 
     // Ensure optimized token count is actually less than or equal to original, otherwise mock it slightly lower
     const finalOptimizedTokenCount = Math.min(

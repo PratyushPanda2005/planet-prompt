@@ -26,6 +26,7 @@ interface PromptMetric {
 interface OptimizeResponse {
   success: boolean;
   isMock: boolean;
+  alreadyOptimized?: boolean;
   original: {
     text: string;
   } & PromptMetric;
@@ -285,7 +286,32 @@ export default function AdvisorPage() {
             </div>
           )}
 
-          {result && (
+          {result && result.alreadyOptimized ? (
+            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] border-emerald-500/30 bg-emerald-500/5">
+              <div className="h-16 w-16 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                <Check className="h-8 w-8" />
+              </div>
+              <h3 className="text-emerald-400 font-extrabold text-2xl tracking-tight">Great prompt, already optimized!</h3>
+              <p className="text-zinc-400 max-w-sm mt-3 text-sm">
+                Your prompt is already highly efficient and clear. No further optimization is required. You are good to go!
+              </p>
+              
+              <div className="mt-8 bg-zinc-950/50 border border-emerald-950/20 p-4 rounded-xl flex items-center gap-6 text-left">
+                <div>
+                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Original Token Cost</div>
+                  <div className="text-xl font-bold text-zinc-200">{result.original.tokens}</div>
+                </div>
+                <div className="w-px h-8 bg-zinc-800"></div>
+                <div>
+                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Carbon Footprint</div>
+                  <div className="text-xl font-bold text-zinc-200 flex items-center gap-1.5">
+                    <Cpu className="h-4 w-4 text-emerald-400" />
+                    {result.original.footprint.carbonGrams.toFixed(2)}g
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : result && (
             <>
               {/* Savings Highlight Badge */}
               <div className="glass-panel p-4 bg-emerald-500/5 border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
