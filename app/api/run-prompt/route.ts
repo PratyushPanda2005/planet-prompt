@@ -11,30 +11,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.SARVAM_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json({
         success: true,
-        output: "[No Gemini API key configured. This is a mock response.]",
+        output: "[No Sarvam API key configured. This is a mock response.]",
       });
     }
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const url = "https://api.sarvam.ai/v1/chat/completions";
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "api-subscription-key": apiKey,
         },
         body: JSON.stringify({
-          contents: [
+          model: "sarvam-30b",
+          messages: [
             {
-              parts: [
-                {
-                  text: promptText,
-                },
-              ],
+              role: "user",
+              content: promptText,
             },
           ],
         }),
@@ -43,31 +42,29 @@ export async function POST(req: Request) {
       if (response.ok) {
         const result = await response.json();
         if (
-          result.candidates &&
-          result.candidates[0] &&
-          result.candidates[0].content &&
-          result.candidates[0].content.parts &&
-          result.candidates[0].content.parts[0] &&
-          result.candidates[0].content.parts[0].text
+          result.choices &&
+          result.choices[0] &&
+          result.choices[0].message &&
+          result.choices[0].message.content
         ) {
-          const output = result.candidates[0].content.parts[0].text;
+          const output = result.choices[0].message.content;
           return NextResponse.json({ success: true, output });
         } else {
           return NextResponse.json(
-            { success: false, error: "Invalid response structure from Gemini API" },
+            { success: false, error: "Invalid response structure from Sarvam AI API" },
             { status: 502 }
           );
         }
       } else {
         const errText = await response.text();
         return NextResponse.json(
-          { success: false, error: `Gemini API error: ${response.status} - ${errText}` },
+          { success: false, error: `Sarvam AI API error: ${response.status} - ${errText}` },
           { status: 502 }
         );
       }
     } catch (err: any) {
       return NextResponse.json(
-        { success: false, error: err.message || "Failed to fetch from Gemini API" },
+        { success: false, error: err.message || "Failed to fetch from Sarvam AI API" },
         { status: 500 }
       );
     }
