@@ -172,7 +172,11 @@ export default function AdvisorPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setLogStatus(`Successfully logged ${type} query to dashboard!`);
+        if (result.alreadyOptimized) {
+          setLogStatus("Successfully logged query to dashboard!");
+        } else {
+          setLogStatus(`Successfully logged ${type} query to dashboard!`);
+        }
       } else {
         setLogStatus("Error: " + data.error);
       }
@@ -287,7 +291,7 @@ export default function AdvisorPage() {
           )}
 
           {result && result.alreadyOptimized ? (
-            <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] border-emerald-500/30 bg-emerald-500/5">
+            <div className="glass-panel p-8 flex flex-col items-center justify-center text-center min-h-[430px] h-auto border-emerald-500/30 bg-emerald-500/5">
               <div className="h-16 w-16 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                 <Check className="h-8 w-8" />
               </div>
@@ -309,6 +313,22 @@ export default function AdvisorPage() {
                     {result.original.footprint.carbonGrams.toFixed(2)}g
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-2 w-full max-w-xs">
+                <button
+                  disabled={loggingType !== null}
+                  onClick={() => handleLogToDb("original")}
+                  className="w-full py-2 bg-emerald-500 hover:bg-emerald-450 text-zinc-950 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]"
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  {loggingType === "original" ? "Logging..." : "Log Prompt to Dashboard"}
+                </button>
+                {logStatus && (
+                  <div className={`text-[11px] font-semibold ${logStatus.includes("Error") ? "text-red-400" : "text-emerald-400 animate-pulse"}`}>
+                    {logStatus}
+                  </div>
+                )}
               </div>
             </div>
           ) : result && (
