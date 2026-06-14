@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Sparkles, 
-  Copy, 
-  Check, 
-  Cpu, 
-  Droplet, 
-  Compass, 
-  ChevronRight, 
-  Zap, 
+import {
+  Sparkles,
+  Copy,
+  Check,
+  Cpu,
+  Droplet,
+  Compass,
+  ChevronRight,
+  Zap,
   ArrowLeftRight,
   Database
 } from "lucide-react";
@@ -58,7 +58,7 @@ export default function AdvisorPage() {
       setLoading(true);
       setResult(null);
       setLogStatus("");
-      
+
       const res = await fetch("/api/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ export default function AdvisorPage() {
   useEffect(() => {
     const initPage = async () => {
       let currentModel = selectedModel;
-      
+
       let urlPrompt = "";
       let urlModel = "";
       if (typeof window !== "undefined") {
@@ -116,7 +116,7 @@ export default function AdvisorPage() {
 
       if (urlPrompt) {
         await runOptimization(urlPrompt, currentModel);
-        
+
         if (typeof window !== "undefined") {
           const newUrl = window.location.pathname;
           window.history.replaceState({}, document.title, newUrl);
@@ -125,15 +125,58 @@ export default function AdvisorPage() {
     };
     initPage();
   }, []);
-  
+
   const [copiedOriginal, setCopiedOriginal] = useState(false);
   const [copiedOptimized, setCopiedOptimized] = useState(false);
 
   const [loggingType, setLoggingType] = useState<"original" | "optimized" | null>(null);
   const [logStatus, setLogStatus] = useState("");
 
+  const [runOutput, setRunOutput] = useState("");
+  const [runLoading, setRunLoading] = useState(false);
+  const [runType, setRunType] = useState<"original" | "optimized" | null>(null);
+  const [copiedRunOutput, setCopiedRunOutput] = useState(false);
+
+  const copyRunOutput = () => {
+    navigator.clipboard.writeText(runOutput);
+    setCopiedRunOutput(true);
+    setTimeout(() => setCopiedRunOutput(false), 2000);
+  };
+
+  const handleRunPrompt = async (type: "original" | "optimized") => {
+    if (!result) return;
+    const activePrompt = type === "original" ? result.original.text : result.optimized.text;
+    try {
+      setRunLoading(true);
+      setRunType(type);
+      setRunOutput("");
+      
+      // Automatically log to database history
+      handleLogToDb(type).catch(err => console.error("Failed to auto-log to db:", err));
+
+      const res = await fetch("/api/run-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promptText: activePrompt }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRunOutput(data.output || "");
+      } else {
+        setRunOutput(`Error: ${data.error}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setRunOutput(`Failed to run prompt: ${err.message || err}`);
+    } finally {
+      setRunLoading(false);
+      setRunType(null);
+    }
+  };
+
   const handleOptimize = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRunOutput("");
     await runOptimization(promptInput, selectedModel);
   };
 
@@ -195,7 +238,7 @@ export default function AdvisorPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Prompt Input Form Panel - takes 1 col on lg */}
         <div className="glass-panel p-6 flex flex-col justify-between h-fit rounded-md">
           <form onSubmit={handleOptimize} className="space-y-4">
@@ -261,7 +304,7 @@ export default function AdvisorPage() {
 
         {/* Advisor Comparison Result Panel - takes 2 cols on lg */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          
+
           {!result && !loading && (
             <div className="glass-panel p-10 flex flex-col items-center justify-center text-center h-[430px] border-dashed rounded-md">
               <div className="h-14 w-14 rounded-sm bg-card-bg border border-card-border flex items-center justify-center text-text-muted mb-4 animate-pulse">
@@ -293,7 +336,7 @@ export default function AdvisorPage() {
               <p className="text-text-muted max-w-sm mt-3 text-sm">
                 Your prompt is already highly efficient and clear. No further optimization is required. You are good to go!
               </p>
-              
+
               <div className="mt-8 bg-background border border-card-border p-4 rounded-sm flex items-center gap-6 text-left">
                 <div>
                   <div className="text-[10px] text-text-muted font-medium uppercase tracking-wider mb-1">Original Token Cost</div>
@@ -317,6 +360,13 @@ export default function AdvisorPage() {
                 >
                   <Database className="h-3.5 w-3.5" />
                   {loggingType === "original" ? "Logging..." : "Log Prompt to Dashboard"}
+                </button>
+                <button
+                  disabled={runLoading}
+                  onClick={() => handleRunPrompt("original")}
+                  className="w-full py-2 bg-accent-green hover:bg-accent-green/90 text-background text-xs font-medium rounded-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  {runLoading && runType === "original" ? "Running..." : "▶ Run Prompt"}
                 </button>
                 {logStatus && (
                   <div className={`text-[11px] font-medium ${logStatus.includes("Error") ? "text-red-400" : "text-accent-green"}`}>
@@ -350,13 +400,13 @@ export default function AdvisorPage() {
 
               {/* Side-by-Side Prompts */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* Original Prompt Card */}
                 <div className="glass-panel p-5 flex flex-col justify-between gap-4 bg-card-bg/10 rounded-md">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-text-muted font-medium uppercase tracking-wider">Original Prompt</span>
-                      <button 
+                      <button
                         onClick={() => copyToClipboard(result.original.text, "original")}
                         className="text-text-muted hover:text-foreground p-1 rounded-sm hover:bg-background transition-colors cursor-pointer"
                         title="Copy original"
@@ -389,7 +439,7 @@ export default function AdvisorPage() {
                         <p className="text-[9px] text-text-muted">Land</p>
                       </div>
                     </div>
-                    
+
                     <button
                       disabled={loggingType !== null}
                       onClick={() => handleLogToDb("original")}
@@ -397,6 +447,13 @@ export default function AdvisorPage() {
                     >
                       <Database className="h-3.5 w-3.5" />
                       {loggingType === "original" ? "Logging..." : "Log Original (Unoptimised)"}
+                    </button>
+                    <button
+                      disabled={runLoading}
+                      onClick={() => handleRunPrompt("original")}
+                      className="w-full mt-1.5 py-1.5 bg-card-bg/50 hover:bg-card-bg text-text-muted hover:text-foreground border border-card-border text-[11px] font-medium rounded-sm flex items-center justify-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {runLoading && runType === "original" ? "Running..." : "▶ Run Unoptimised"}
                     </button>
                   </div>
                 </div>
@@ -406,7 +463,7 @@ export default function AdvisorPage() {
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-accent-green font-medium uppercase tracking-wider">Optimized Suggestions</span>
-                      <button 
+                      <button
                         onClick={() => copyToClipboard(result.optimized.text, "optimized")}
                         className="text-accent-green hover:text-accent-green/80 p-1 rounded-sm hover:bg-accent-green/10 transition-colors cursor-pointer"
                         title="Copy optimized text"
@@ -448,6 +505,13 @@ export default function AdvisorPage() {
                       <Database className="h-3.5 w-3.5" />
                       {loggingType === "optimized" ? "Logging..." : "Log & Execute Optimized"}
                     </button>
+                    <button
+                      disabled={runLoading}
+                      onClick={() => handleRunPrompt("optimized")}
+                      className="w-full mt-1.5 py-1.5 bg-accent-green hover:bg-accent-green/90 text-background text-[11px] font-medium rounded-sm flex items-center justify-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {runLoading && runType === "optimized" ? "Running..." : "▶ Run Optimised"}
+                    </button>
                   </div>
                 </div>
 
@@ -459,6 +523,36 @@ export default function AdvisorPage() {
                 </div>
               )}
             </>
+          )}
+
+          {(runOutput || runLoading) && (
+            <div className="glass-panel p-5 flex flex-col gap-3 rounded-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground font-medium uppercase tracking-wider">AI Response</span>
+                {runOutput && (
+                  <button 
+                    onClick={copyRunOutput}
+                    className="text-text-muted hover:text-foreground p-1 rounded-sm hover:bg-background transition-colors cursor-pointer"
+                    title="Copy response"
+                  >
+                    {copiedRunOutput ? <Check className="h-4 w-4 text-accent-green" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                )}
+              </div>
+
+              {runLoading && (
+                <div className="flex items-center gap-2 text-xs text-text-muted">
+                  <div className="h-4 w-4 border-2 border-accent-green border-t-transparent rounded-full animate-spin" />
+                  Generating response...
+                </div>
+              )}
+
+              {runOutput && (
+                <div className="bg-background border border-card-border rounded-sm p-4 text-sm text-foreground whitespace-pre-wrap">
+                  {runOutput}
+                </div>
+              )}
+            </div>
           )}
 
         </div>
