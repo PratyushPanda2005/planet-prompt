@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, LayoutDashboard, Sparkles, FileText, ArrowLeft, Menu, X, Sun, Moon } from "lucide-react";
+import { Leaf, LayoutDashboard, Sparkles, FileText, ArrowLeft, Menu, X, Sun, Moon, Users } from "lucide-react";
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, OrganizationSwitcher, useAuth } from "@clerk/nextjs";
 
 export default function DashboardLayout({
   children,
@@ -15,16 +15,32 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  // Synchronise theme with document.documentElement
+  // Synchronise theme with document.documentElement and localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+      setTheme("light");
+    }
+  }, []);
+
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
   }, [theme]);
+
+  const { orgId, orgRole } = useAuth();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Prompt Advisor", href: "/advisor", icon: Sparkles },
     { name: "Monthly Reports", href: "/report", icon: FileText },
   ];
+
+  if (orgId && orgRole === "org:admin") {
+    navigation.push({ name: "Organization", href: "/org", icon: Users });
+  }
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans" data-theme={theme}>
@@ -36,9 +52,7 @@ export default function DashboardLayout({
           {/* Logo Area */}
           <div className="flex items-center h-16 px-6 border-b border-card-border">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <div className="h-8 w-8 rounded-sm bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
-                <Leaf className="h-4.5 w-4.5 text-accent-green" />
-              </div>
+              <img src="/logo.png" alt="PlanetPrompt Logo" className="h-8 w-8 object-contain" />
               <span className="font-medium text-base tracking-tight text-foreground">
                 Planet<span className="text-accent-green font-medium">Prompt</span>
               </span>
@@ -67,21 +81,22 @@ export default function DashboardLayout({
           </nav>
 
           {/* User Info Area */}
-          <div className="p-4 border-t border-card-border flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <UserButton showName appearance={{
-                elements: {
-                  userButtonOuterIdentifier: {
-                    color: "var(--foreground)",
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                  },
-                  userButtonBox: "flex-row-reverse"
-                }
-              }} />
-            </div>
-
-            <div className="flex items-center gap-2">
+          <div className="p-4 border-t border-card-border flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <UserButton showName appearance={{
+                  elements: {
+                    userButtonOuterIdentifier: {
+                      color: "var(--foreground)",
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                    },
+                    userButtonBox: "flex-row-reverse"
+                  }
+                }} />
+              </div>
+  
+              <div className="flex items-center gap-2">
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="text-text-muted hover:text-foreground transition-colors p-2 rounded-sm bg-card-bg border border-card-border cursor-pointer flex items-center justify-center"
@@ -95,8 +110,25 @@ export default function DashboardLayout({
               </button>
 
               <Link href="/" className="text-text-muted hover:text-foreground transition-colors p-2 rounded-sm bg-card-bg border border-card-border flex items-center justify-center" title="Exit Dashboard">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+            </div>
+            </div>
+            <div className="pt-2 border-t border-card-border flex justify-start">
+              <OrganizationSwitcher 
+                appearance={{
+                  elements: {
+                    organizationSwitcherTrigger: "text-foreground hover:bg-card-bg/60 text-xs py-1.5 px-2.5 rounded-sm border border-card-border bg-card-bg w-full justify-between transition-all duration-200",
+                    organizationSwitcherTriggerIcon: "text-text-muted hover:text-foreground",
+                    organizationPreviewTitle: {
+                      color: "var(--foreground)",
+                    },
+                    organizationPreviewSubtitle: {
+                      color: "var(--text-muted)",
+                    }
+                  }
+                }} 
+              />
             </div>
           </div>
 
@@ -108,9 +140,7 @@ export default function DashboardLayout({
 
         <header className="flex items-center justify-between md:hidden h-16 px-6 border-b border-card-border bg-sidebar-bg/80 backdrop-blur-md z-45">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-sm bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
-              <Leaf className="h-4.5 w-4.5 text-accent-green" />
-            </div>
+            <img src="/logo.png" alt="PlanetPrompt Logo" className="h-8 w-8 object-contain" />
             <span className="font-medium text-base tracking-tight text-foreground">
               Planet<span className="text-accent-green font-medium">Prompt</span>
             </span>
@@ -148,7 +178,7 @@ export default function DashboardLayout({
             <nav className="relative flex flex-col w-4/5 max-w-sm h-full bg-sidebar-bg border-r border-card-border p-6 z-50">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                  <Leaf className="h-5 w-5 text-accent-green" />
+                  <img src="/logo.png" alt="PlanetPrompt Logo" className="h-5 w-5 object-contain" />
                   <span className="font-medium text-foreground">PlanetPrompt</span>
                 </div>
                 <button onClick={() => setSidebarOpen(false)} className="text-text-muted">
@@ -188,6 +218,22 @@ export default function DashboardLayout({
                     userButtonBox: "flex-row-reverse"
                   }
                 }} />
+                <div className="pt-2 border-t border-card-border w-full">
+                  <OrganizationSwitcher 
+                    appearance={{
+                      elements: {
+                        organizationSwitcherTrigger: "text-foreground hover:bg-card-bg/60 text-xs py-1.5 px-2.5 rounded-sm border border-card-border bg-card-bg w-full justify-between transition-all duration-200",
+                        organizationSwitcherTriggerIcon: "text-text-muted hover:text-foreground",
+                        organizationPreviewTitle: {
+                          color: "var(--foreground)",
+                        },
+                        organizationPreviewSubtitle: {
+                          color: "var(--text-muted)",
+                        }
+                      }
+                    }} 
+                  />
+                </div>
               </div>
             </nav>
           </div>

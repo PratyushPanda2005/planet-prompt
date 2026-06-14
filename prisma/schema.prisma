@@ -1,7 +1,6 @@
 datasource db {
   provider = "postgresql"
-    url = env("DATABASE_URL")
-
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -9,25 +8,32 @@ generator client {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  name      String?
-  createdAt DateTime   @default(now())
-  queries   QueryLog[]
-  reports   Report[]
+  id             String        @id @default(uuid())
+  email          String        @unique
+  name           String?
+  createdAt      DateTime      @default(now())
+  queries        QueryLog[]
+  reports        Report[]
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  orgRole        String?
 }
 
 model QueryLog {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  promptText  String
-  modelUsed   String
-  tokenCount  Int
-  carbonGrams Float
-  waterMl     Float
-  landCm2     Float
-  createdAt   DateTime @default(now())
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptText     String
+  modelUsed      String
+  tokenCount     Int
+  carbonGrams    Float
+  waterMl        Float
+  landCm2        Float
+  createdAt      DateTime      @default(now())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
 }
 
 model Report {
@@ -51,3 +57,29 @@ model ModelConfig {
   landPer1k     Float
   createdAt     DateTime @default(now())
 }
+
+model Organization {
+  id         String      @id
+  name       String
+  slug       String      @unique
+  createdAt  DateTime    @default(now())
+  users      User[]
+  orgReports OrgReport[]
+  queries    QueryLog[]
+}
+
+model OrgReport {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  month          String       // e.g. "2026-06"
+  totalCarbon    Float
+  totalWater     Float
+  totalLand      Float
+  memberCount    Int
+  aiNarrative    String
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, month])
+}
+
