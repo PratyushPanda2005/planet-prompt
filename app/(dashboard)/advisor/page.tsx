@@ -51,25 +51,31 @@ export default function AdvisorPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizeResponse | null>(null);
 
-  const runOptimization = async (prompt: string, model: string) => {
-    if (!prompt.trim()) return;
+  const runOptimization = async (prompt: string, model: string, audioFile?: File | null) => {
+    if (!prompt.trim() && !audioFile) return;
 
     try {
       setLoading(true);
       setResult(null);
       setLogStatus("");
 
+      const formData = new FormData();
+      formData.append("promptText", prompt);
+      formData.append("modelUsed", model);
+      if (audioFile) {
+        formData.append("audio", audioFile);
+      }
+
       const res = await fetch("/api/optimize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          promptText: prompt,
-          modelUsed: model,
-        }),
+        body: formData,
       });
       const data = await res.json();
       if (data.success) {
         setResult(data);
+        if (data.original?.text && data.original.text !== prompt) {
+          setPromptInput(data.original.text);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -174,10 +180,65 @@ export default function AdvisorPage() {
     }
   };
 
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingInterval, setRecordingInterval] = useState<any | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: "audio/wav" });
+        const file = new File([audioBlob], "recording.wav", { type: "audio/wav" });
+        setAudioFile(file);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setAudioDuration(0);
+      
+      const startTime = Date.now();
+      const interval = setInterval(() => {
+        setAudioDuration(Math.round((Date.now() - startTime) / 1000));
+      }, 1000);
+      setRecordingInterval(interval);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      alert("Microphone access is required to record speech.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      if (recordingInterval) {
+        clearInterval(recordingInterval);
+        setRecordingInterval(null);
+      }
+    }
+  };
+
+  const clearAudio = () => {
+    setAudioFile(null);
+    setAudioDuration(0);
+  };
+
   const handleOptimize = async (e: React.FormEvent) => {
     e.preventDefault();
     setRunOutput("");
-    await runOptimization(promptInput, selectedModel);
+    await runOptimization(promptInput, selectedModel, audioFile);
   };
 
   const copyToClipboard = (text: string, type: "original" | "optimized") => {
@@ -278,8 +339,55 @@ export default function AdvisorPage() {
                 placeholder="Paste your system instructions or long LLM prompts here..."
                 rows={10}
                 className="w-full text-xs bg-background border border-card-border rounded-sm px-3 py-2 text-foreground focus:outline-none focus:border-accent-green/50 resize-none font-mono font-normal"
-                required
+                required={!audioFile}
               />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="block text-xs font-medium text-text-muted">Speech Input (Optional)</label>
+              <div className="flex items-center gap-3 bg-background border border-card-border rounded-sm px-3 py-2">
+                {isRecording ? (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="flex items-center justify-center h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white cursor-pointer animate-pulse"
+                    title="Stop Recording"
+                  >
+                    <div className="h-3 w-3 bg-white rounded-xs" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="flex items-center justify-center h-8 w-8 rounded-full bg-accent-green hover:bg-accent-green/90 text-background cursor-pointer"
+                    title="Start Recording"
+                  >
+                    <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                  </button>
+                )}
+                
+                <div className="flex-1 text-[11px] text-text-muted">
+                  {isRecording ? (
+                    <span className="text-red-400 font-medium animate-pulse">Recording speech... ({audioDuration}s)</span>
+                  ) : audioFile ? (
+                    <div className="flex items-center justify-between">
+                      <span>Audio recorded ({audioDuration}s)</span>
+                      <button
+                        type="button"
+                        onClick={clearAudio}
+                        className="text-red-400 hover:text-red-300 font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  ) : (
+                    <span>Click to record audio prompt</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <button

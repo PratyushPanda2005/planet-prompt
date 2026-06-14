@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { classifyPrompt } from "@/gatekeeper/gatekeeper";
+import { put } from "@vercel/blob";
 // Hardcoded conversion factors (1000 tokens)
 const CONVERSIONS = {
   carbonPer1k: 0.3,   // grams
@@ -102,9 +103,23 @@ function heuristicOptimizePrompt(prompt: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { promptText, modelUsed } = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let promptText = "";
+    let modelUsed = "";
+    let audioFile: File | null = null;
 
-    if (!promptText || !modelUsed) {
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      promptText = formData.get("promptText") as string || "";
+      modelUsed = formData.get("modelUsed") as string || "";
+      audioFile = formData.get("audio") as File | null;
+    } else {
+      const body = await req.json();
+      promptText = body.promptText || "";
+      modelUsed = body.modelUsed || "";
+    }
+
+    if ((!promptText && !audioFile) || !modelUsed) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -112,6 +127,54 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.SARVAM_API_KEY;
+
+    let audioUrl = "";
+    if (audioFile) {
+      try {
+        const blob = await put(audioFile.name || "audio.wav", audioFile, {
+          access: "public",
+        });
+        audioUrl = blob.url;
+      } catch (err: any) {
+        console.error("Vercel Blob upload failed:", err);
+      }
+    }
+
+    if (audioFile && apiKey) {
+      try {
+        const sarvamFormData = new FormData();
+        sarvamFormData.append("file", audioFile);
+        sarvamFormData.append("model", "saaras:v3");
+
+        const response = await fetch("https://api.sarvam.ai/speech-to-text", {
+          method: "POST",
+          headers: {
+            "api-subscription-key": apiKey,
+          },
+          body: sarvamFormData,
+        });
+
+        if (response.ok) {
+          const sttData = await response.json();
+          const transcript = sttData.transcript || "";
+          if (transcript) {
+            promptText = (promptText ? `${promptText}\n${transcript}` : transcript).trim();
+          }
+        } else {
+          console.warn("Sarvam AI STT returned error status:", response.status);
+        }
+      } catch (err) {
+        console.error("Failed to transcribe audio via Sarvam STT:", err);
+      }
+    }
+
+    if (!promptText) {
+      return NextResponse.json(
+        { success: false, error: "Prompt text is empty or transcription failed" },
+        { status: 400 }
+      );
+    }
+
     const originalTokenCount = estimateTokens(promptText);
 
     const gatekeeperResult = await classifyPrompt(promptText);
