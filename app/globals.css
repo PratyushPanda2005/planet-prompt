@@ -126,3 +126,28 @@ body {
   animation: shimmer 2s infinite;
   content: '';
 }
+
+/* Clerk component theme overrides */
+.cl-organizationSwitcherTrigger,
+.cl-organizationSwitcherTrigger * {
+  color: var(--foreground) !important;
+}
+
+.cl-organizationSwitcherTrigger {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 0.125rem !important;
+}
+
+.cl-organizationSwitcherTrigger:hover {
+  background-color: var(--card-bg) !important;
+  opacity: 0.85;
+}
+
+.cl-organizationPreviewSubtitle {
+  color: var(--text-muted) !important;
+}
+
+.cl-organizationSwitcherTriggerIcon {
+  color: var(--text-muted) !important;
+}

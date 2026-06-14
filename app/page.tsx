@@ -21,9 +21,7 @@ export default async function LandingPage() {
       <header className="border-b border-zinc-200/60 backdrop-blur-md bg-[#FAFBF9]/80 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
-            <div className="h-10 w-10 rounded-sm bg-[#1B3B2B] flex items-center justify-center shadow-sm">
-              <Leaf className="h-6 w-6 text-[#D2E4DC]" />
-            </div>
+            <img src="/logo.png" alt="PlanetPrompt Logo" className="h-10 w-10 object-contain" />
             <span className="font-normal text-xl tracking-tight text-[#1B3B2B]">
               PlanetPrompt
             </span>
@@ -67,7 +65,7 @@ export default async function LandingPage() {
 
             {/* Tagline Badge */}
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-sm bg-[#E8F0EC] border border-[#D2E4DC] text-xs font-normal text-[#1B3B2B] uppercase tracking-wider">
-              <Leaf className="h-4 w-4 text-[#2E7D32]" />
+              <img src="/logo.png" alt="PlanetPrompt Logo" className="h-4 w-4 object-contain" />
               AI Environmental Footprint Advisor
             </div>
 
