@@ -124,54 +124,52 @@ export async function GET(req: Request) {
 
     // Otherwise, generate a new AI narrative summary
     let aiNarrative = "";
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.SARVAM_API_KEY;
 
     if (apiKey) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(url, {
+        const response = await fetch("https://api.sarvam.ai/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "api-subscription-key": apiKey,
           },
           body: JSON.stringify({
-            contents: [
+            model: "sarvam-105b",
+            messages: [
               {
-                parts: [
-                  {
-                    text: `You are a sustainability advisor for AI operations. Summarize the user's monthly footprint data.
+                role: "system",
+                content:
+                  "You are a sustainability advisor for AI operations. Summarize the user's monthly footprint data.",
+              },
+              {
+                role: "user",
+                content: `Summarize the user's monthly footprint data:
 - Total queries: ${logs.length}
 - Total Carbon footprint: ${totalCarbon.toFixed(1)} grams
 - Total Water footprint: ${totalWaterLitres.toFixed(2)} litres (from ${totalWater.toFixed(0)} ml)
 - Total Land footprint: ${totalLand.toFixed(1)} cm²
 
 Write a 3-sentence narrative summarizing their sustainability impact, acknowledging their usage, and offering one actionable tip to improve efficiency next month. Do not include markdown formatting or titles. Output plain text only.`,
-                  },
-                ],
               },
             ],
-            generationConfig: {
-              maxOutputTokens: 256,
-              temperature: 0.2,
-            },
+            temperature: 0.2,
+            max_tokens: 256,
           }),
         });
 
         if (response.ok) {
           const result = await response.json();
-          if (
-            result.candidates &&
-            result.candidates[0] &&
-            result.candidates[0].content &&
-            result.candidates[0].content.parts &&
-            result.candidates[0].content.parts[0] &&
-            result.candidates[0].content.parts[0].text
-          ) {
-            aiNarrative = result.candidates[0].content.parts[0].text.trim();
+          const content = result.choices?.[0]?.message?.content?.trim();
+          if (content) {
+            aiNarrative = content;
           }
+        } else {
+          console.warn("Sarvam API returned error status:", response.status);
         }
       } catch (err) {
-        console.error("Error generating narrative via Gemini API:", err);
+        console.error("Error generating narrative via Sarvam API:", err);
       }
     }
 

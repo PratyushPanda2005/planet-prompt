@@ -50,6 +50,8 @@ export default function AdvisorPage() {
   const [selectedModel, setSelectedModel] = useState("claude-3-5-sonnet");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizeResponse | null>(null);
+  const [loggingType, setLoggingType] = useState<"original" | "optimized" | null>(null);
+  const [logStatus, setLogStatus] = useState("");
 
   const runOptimization = async (prompt: string, model: string) => {
     if (!prompt.trim()) return;
@@ -128,9 +130,6 @@ export default function AdvisorPage() {
   
   const [copiedOriginal, setCopiedOriginal] = useState(false);
   const [copiedOptimized, setCopiedOptimized] = useState(false);
-
-  const [loggingType, setLoggingType] = useState<"original" | "optimized" | null>(null);
-  const [logStatus, setLogStatus] = useState("");
 
   const handleOptimize = async (e: React.FormEvent) => {
     e.preventDefault();
