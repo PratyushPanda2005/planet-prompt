@@ -129,7 +129,7 @@ export async function POST(req: Request) {
 
     if (gatekeeperResult.complexity === "LOW") {
       console.log("low - early return");
-      
+
       const modelConfig = await db.modelConfig.findUnique({
         where: { name: modelUsed }
       });
@@ -212,10 +212,10 @@ export async function POST(req: Request) {
             isMock = false;
           }
         } else {
-          console.warn("Sarvam API returned error status:", response.status);
+          console.warn("Sarvam AI API returned error status:", response.status);
         }
       } catch (err) {
-        console.error("Failed to connect to Sarvam API, falling back to local heuristic:", err);
+        console.error("Failed to connect to Sarvam AI API, falling back to local heuristic:", err);
       }
     }
 
@@ -229,7 +229,7 @@ export async function POST(req: Request) {
     // SAFETY NET: If the optimizer didn't actually reduce the token count, treat it as already optimized!
     if (optimizedTokenCount >= originalTokenCount || optimizedText.trim().toLowerCase() === promptText.trim().toLowerCase()) {
       console.log("identical or no token reduction - early return");
-      
+
       const modelConfig = await db.modelConfig.findUnique({
         where: { name: modelUsed }
       });
