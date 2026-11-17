@@ -114,7 +114,18 @@ export async function POST(req: Request) {
     const apiKey = process.env.SARVAM_API_KEY;
     const originalTokenCount = estimateTokens(promptText);
 
-    const gatekeeperResult = await classifyPrompt(promptText);
+    let gatekeeperResult;
+    try {
+      gatekeeperResult = await classifyPrompt(promptText);
+    } catch (err) {
+      console.warn("Gatekeeper failed, defaulting to MEDIUM complexity:", err);
+      gatekeeperResult = {
+        complexity: "MEDIUM",
+        confidence: 0.8,
+        score: 80,
+        label: "needs some optimization",
+      };
+    }
 
     if (gatekeeperResult.complexity === "LOW") {
       console.log("low - early return");
@@ -160,38 +171,44 @@ export async function POST(req: Request) {
 
     if (apiKey) {
       try {
-        // Real Sarvam AI API call via fetch
-        const url = "https://api.sarvam.ai/v1/chat/completions";
-        const response = await fetch(url, {
+        // Real Sarvam AI call via fetch
+        const response = await fetch("https://api.sarvam.ai/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
             "api-subscription-key": apiKey,
           },
           body: JSON.stringify({
-            model: "sarvam-30b",
+            model: "sarvam-105b",
             messages: [
               {
+                role: "system",
+                content:
+                  "You are a prompt optimization AI. Your task is to rewrite the user's prompt to be leaner, more concise, and token-efficient while retaining all core meaning, instructions, and constraints. Do not add conversational fluff, intro, or explanations. Output ONLY the optimized prompt text without any surrounding quotes or markdown code blocks.",
+              },
+              {
                 role: "user",
-                content: `You are a prompt optimization AI. Your task is to rewrite the user's prompt to be leaner, more concise, and token-efficient while retaining all core meaning, instructions, and constraints. Do not add conversational fluff, intro, or explanations. Output ONLY the optimized prompt text.
-
-User Prompt:
-"${promptText}"`,
+                content: promptText,
               },
             ],
             temperature: 0.2,
+            max_tokens: 1024,
           }),
         });
 
         if (response.ok) {
           const result = await response.json();
-          if (
-            result.choices &&
-            result.choices[0] &&
-            result.choices[0].message &&
-            result.choices[0].message.content
-          ) {
-            optimizedText = result.choices[0].message.content.trim();
+          const content = result.choices?.[0]?.message?.content?.trim();
+          if (content) {
+            let cleaned = content
+              .replace(/^```[a-z]*\n?/i, "")
+              .replace(/\n?```$/i, "")
+              .trim();
+            if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+              cleaned = cleaned.slice(1, -1).trim();
+            }
+            optimizedText = cleaned || content;
             isMock = false;
           }
         } else {
